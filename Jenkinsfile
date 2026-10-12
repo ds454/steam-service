@@ -23,7 +23,8 @@ pipeline {
         container('buildkit') {
           script {
             def dockerConfig = "/tmp/registry-creds"
-            def 
+            def branch = env.BRANCH_NAME.replace('/', '-')
+            def hash = env.GIT_COMMIT.take(10)
 
             withCredentials([usernamePassword(
               credentialsId: 'ghcr-creds',
