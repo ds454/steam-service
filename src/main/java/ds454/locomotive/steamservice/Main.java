@@ -2,7 +2,7 @@ package ds454.locomotive.steamservice;
 
 import java.util.Map;
 
-public class App {
+public class Main {
     public static void main(String[] args) {
         Map<String, String> variables = System.getenv();
         var name = variables.get("NAME") == null ? "I am nameless" : "My name is " + variables.get("NAME");
