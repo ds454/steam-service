@@ -8,7 +8,7 @@
             "type": "java",
             "name": "Steam Service",
             "request": "launch",
-            "mainClass": "ds454.locomotive.steamservice.App",
+            "mainClass": "ds454.locomotive.steamservice.Main",
             "projectName": "steam-service",
             "envFile": [
                 "${workspaceFolder}/local-dev/env/steam-service/steam-service.env"
