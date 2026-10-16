@@ -12,7 +12,7 @@ echo Done!
 
 # Compile protoc files
 echo Compiling protoc to Java...
-mvn compile
+mvn clean compile
 echo Done!
 
 echo Development environment configured.

@@ -4,7 +4,7 @@
         {
             "label": "Compile Protoc",
             "type": "shell",
-            "command": "mvn compile"
+            "command": "mvn clean compile"
         }
     ]
 }
