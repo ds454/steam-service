@@ -39,5 +39,3 @@ The first time this devcontainer is started, docker needs to pull the image (the
 | Maven    | 3.10.0   |
 
 Note that gradle is _not_ installed.
-
-Need to trigger jenins :/
