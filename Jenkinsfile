@@ -66,7 +66,7 @@ pipeline {
           script {
             String dockerConfig = '/tmp/registry-creds'
             String branch = env.BRANCH_NAME.replace('/', '-')
-            String hash = env.GIT_COMMIT.take(10)
+            String hash = sh(script: 'git rev-parse --short=10 HEAD', returnStdout: true).take(10)
 
             withCredentials([usernamePassword(
               credentialsId: 'ghcr-creds',
