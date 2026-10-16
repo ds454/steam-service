@@ -20,17 +20,38 @@ pipeline {
       '''
     }
   }
+  options {
+    skipDefaultCheckout(true)
+  }
   stages {
+    stage('Checkout') {
+      steps {
+        checkout([
+          $class: 'GitSCM',
+          branches: scm.branches,
+          userRemoteConfigs: scm.userRemoteConfigs,
+          extensions: [[
+            $class: 'SubmoduleOption',
+            disableSubmodules: false,
+            recursiveSubmodules: true,
+            parentCredentials: true,
+            trackingSubmodules: false,
+            reference: '',
+            timeout: 30
+          ]]
+        ])
+      }
+    }
     stage('Test') {
       steps {
         container('maven') {
           script {
-            sh """
+            sh '''
               ls -lah local-dev
               mvn clean
               mvn clean compile
               mvn package
-            """
+            '''
           }
         }
       }
@@ -54,6 +75,7 @@ pipeline {
             )]) {
               sh """
                 export BUILDKIT_HTTP_TIMEOUT=300
+                export DOCKER_CONFIG=${dockerConfig}
                 mkdir -p ${dockerConfig}
 
                 AUTH=\$(printf '%s:%s' '${USERNAME}' '${TOKEN}' | base64 -w 0)
