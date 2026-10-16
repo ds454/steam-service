@@ -10,5 +10,10 @@ echo Pulling maven dependancies...
 mvn dependency:resolve
 echo Done!
 
+# Compile protoc files
+echo Compiling protoc to Java...
+mvn compile
+echo Done!
+
 echo Development environment configured.
 echo Happy coding!
