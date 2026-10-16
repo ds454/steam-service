@@ -26,6 +26,7 @@ pipeline {
         container('maven') {
           script {
             sh """
+              ls -lah
               mvn clean
               mvn clean compile
               mvn package
