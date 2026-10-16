@@ -18,7 +18,8 @@
                 "vscjava.vscode-java-pack@0.31.1",
                 "ms-azuretools.vscode-containers@2.5.2",
                 "drblury.protobuf-vsc@1.6.15",
-                "redhat.vscode-xml@0.29.3"
+                "redhat.vscode-xml@0.29.3",
+                "nicolasvuillamy.vscode-groovy-lint@4.2.1"
             ]
         }
     }

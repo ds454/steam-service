@@ -1,3 +1,4 @@
+/* groovylint-disable CompileStatic, NestedBlockDepth */
 pipeline {
   agent {
     kubernetes {
@@ -11,7 +12,7 @@ pipeline {
             securityContext:
               privileged: true
           - name: maven
-            image: maven:3.9-eclipse-temurin-21-alpine
+            image: maven:3.10.0-eclipse-temurin-25-alpine
             command:
             - sleep
             args:
@@ -20,17 +21,30 @@ pipeline {
     }
   }
   stages {
+    stage('Test') {
+      steps {
+        container('maven') {
+          script {
+            sh """
+              mvn clean
+              mvn clean compile
+              mvn package
+            """
+          }
+        }
+      }
+    }
     stage('Build') {
       environment {
         REGISTRY = "${env.GHCR_REGISTRY}"
-        REPOSITORY = "steam-service"
+        REPOSITORY = 'steam-service'
       }
       steps {
         container('buildkit') {
           script {
-            def dockerConfig = "/tmp/registry-creds"
-            def branch = env.BRANCH_NAME.replace('/', '-')
-            def hash = env.GIT_COMMIT.take(10)
+            String dockerConfig = '/tmp/registry-creds'
+            String branch = env.BRANCH_NAME.replace('/', '-')
+            String hash = env.GIT_COMMIT.take(10)
 
             withCredentials([usernamePassword(
               credentialsId: 'ghcr-creds',
