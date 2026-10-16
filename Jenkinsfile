@@ -12,7 +12,7 @@ pipeline {
             securityContext:
               privileged: true
           - name: maven
-            image: maven:3.10.0-eclipse-temurin-25-alpine
+            image: maven:3.10.0-eclipse-temurin-25
             command:
             - sleep
             args:
