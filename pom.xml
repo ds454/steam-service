@@ -12,6 +12,7 @@
 
   <properties>
     <maven.compiler.release>25</maven.compiler.release>
+    <maven.compiler.target>25</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <grpc.version>1.81.0</grpc.version>
     <protobuf.version>4.36.2</protobuf.version>
