@@ -10,7 +10,7 @@
             "request": "launch",
             "mainClass": "ds454.locomotive.steamservice.Main",
             "projectName": "steam-service",
-            "preLaunchTask": "Compile Protoc",
+            "preLaunchTask": "Transpile Protoc",
             "envFile": [
                 "${workspaceFolder}/local-dev/env/steam-service/steam-service.env"
             ]

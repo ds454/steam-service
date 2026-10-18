@@ -1,33 +1,47 @@
 package ds454.locomotive.steamservice;
 
-import java.io.IOException;
-import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ds454.locomotive.steamservice.config.Config;
+import ds454.locomotive.steamservice.grpc.SteamService;
+import ds454.locomotive.steamservice.steamapi.SteamApiClient;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 public class Main {
-    public static void main(String[] args) {
-        Map<String, String> variables = System.getenv();
-        var name = variables.get("NAME") == null ? "I am nameless" : "My name is " + variables.get("NAME");
-        var hasSteamKey = variables.containsKey("STEAM_API_KEY") ? "I have a steam key :)" : "I don't have a steam key :(";
-        System.out.printf("Hello! %s, and %s\n", name, hasSteamKey);
 
-        Server s;
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
 
-        try {
-            s = ServerBuilder.forPort(80).addService(new AchievementService()).build().start();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
+    public static void main(String[] args) throws Exception {
+        log.info("Loading config from environment...");
+        var config = new Config();
+        log.info("Done");
 
-        System.out.println("Started gPRC Server!");
+        log.info("Starting gRPC server...");
+        Server server = ServerBuilder.forPort(config.port)
+                .addService(new SteamService(new SteamApiClient(config)))
+                .build()
+                .start();
+        log.info("gRPC server started.");
 
-        try {
-            s.awaitTermination();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        // Handle clean shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutting down gRPC server...");
+            server.shutdown();
+            try {
+                if (!server.awaitTermination(10, TimeUnit.SECONDS)) {
+                    server.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                server.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }));
+
+        server.awaitTermination();
+        log.info("Goodbye!");
     }
 }

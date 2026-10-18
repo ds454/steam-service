@@ -2,6 +2,11 @@
 
 Repo for the Steam Service.
 
+## Environment Variables
+| Variable | Description  |
+|----------|--------------|
+| STEAM_WEBAPI_TOKEN     | Web API token for Steam     |
+
 ## Getting Started
 
 Before doing anything, this repo needs to be cloned recursively. Make sure git can use your github username and token without prompts, and run the following command.

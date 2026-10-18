@@ -2,6 +2,9 @@
     "name": "steam-service",
     "image": "mcr.microsoft.com/devcontainers/java:25-bookworm",
     "postAttachCommand": "${containerWorkspaceFolder}/.devcontainer/start.sh",
+    "forwardPorts": [
+        8080
+    ],
     "features": {
         "ghcr.io/devcontainers/features/java:1.8.3": {
             "version": "25.0.4+1-ms",
