@@ -10,9 +10,6 @@
             "version": "25.0.4+1-ms",
             "installMaven": "true",
             "mavenVersion": "3.10.0"
-        },
-        "ghcr.io/devcontainers-extra/features/protoc:1.0.3": {
-            "version": "latest"
         }
     },
     "customizations": {
