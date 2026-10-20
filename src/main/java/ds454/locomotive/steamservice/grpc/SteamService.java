@@ -46,12 +46,4 @@ public class SteamService extends SteamServiceImplBase {
         responseObserver.onCompleted();
     }
 
-    @Override
-    public void getGamesFromGameAppIds(GetGamesFromGameAppIdsRequest request, StreamObserver<GetGamesFromGameAppIdsResponse> responseObserver) {
-        var response = GetGamesFromGameAppIdsResponse.newBuilder();
-
-        responseObserver.onNext(response.build());
-        responseObserver.onCompleted();
-    }
-
 }
