@@ -13,11 +13,15 @@ public class Config {
     private static final String webApiHostName = "STEAM_WEBAPI_HOST";
     private static final String webApiFormatName = "STEAM_WEBAPI_FORMAT";
     private static final String portName = "GRPC_PORT";
+    private static final String storeApiHostName = "STEAM_STOREAPI_HOST";
+    private static final String storeApiContextName = "STEAM_STOREAPI_CONTEXT";
 
     public final String webApiToken;
     public final String webApiHost;
     public final String webApiFormat;
     public final Integer port;
+    public final String storeApiHost;
+    public final String storeApiContext;
 
     public Config() {
         Map<String, String> env = System.getenv();
@@ -45,5 +49,17 @@ public class Config {
             throw new Error();
         }
         this.port = Integer.parseInt(env.get(portName));
+
+        if (!env.containsKey(storeApiHostName)) {
+            log.error("Missing required env variable '{}'", storeApiHostName);
+            throw new Error();
+        }
+        this.storeApiHost = env.get(storeApiHostName);
+
+        if (!env.containsKey(storeApiContextName)) {
+            log.error("Missing required env variable '{}'", storeApiContextName);
+            throw new Error();
+        }
+        this.storeApiContext = env.get(storeApiContextName);
     }
 }

@@ -1,11 +1,11 @@
-package ds454.locomotive.steamservice.steamapi;
+package ds454.locomotive.steamservice.steamapi.model;
 
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record GetOwnedGamesResponse(Response response) {
+public record GetOwnedGames(Response response) {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Response(List<GameId> games) {
     }
