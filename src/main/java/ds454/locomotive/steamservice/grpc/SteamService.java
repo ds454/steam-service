@@ -2,7 +2,9 @@ package ds454.locomotive.steamservice.grpc;
 
 import java.util.List;
 
-import ds454.locomotive.generated.grpc.Achievement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ds454.locomotive.generated.grpc.AchievementFromSteam;
 import ds454.locomotive.generated.grpc.AchievementsFromSteam;
 import ds454.locomotive.generated.grpc.AppIdList;
@@ -36,6 +38,8 @@ import io.grpc.stub.StreamObserver;
 
 public class SteamService extends SteamServiceImplBase {
 
+    private static final Logger log = LoggerFactory.getLogger(SteamService.class);
+
     private final SteamApiClient steamApiClient;
 
     public SteamService(SteamApiClient steamApiClient) {
@@ -45,15 +49,19 @@ public class SteamService extends SteamServiceImplBase {
     @Override
     public void getOwnedGameAppIds(GetOwnedGameAppIdsRequest request,
             StreamObserver<GetOwnedGameAppIdsResponse> responseObserver) {
+        log.debug("Received get owned games request");
         var response = GetOwnedGameAppIdsResponse.newBuilder();
         switch (steamApiClient.getOwnedGameIds(request.getSteamId())) {
             case Result.Success(List<Integer> value) -> {
+                log.debug("Success");
                 response.setAppIds(AppIdList.newBuilder().addAllAppIds(value));
             }
             case Result.Failure(Problem error) -> {
+                log.debug("Failure");
                 response.setProblem(error);
             }
         }
+        log.debug("Finished get owned games request");
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
     }
@@ -61,7 +69,9 @@ public class SteamService extends SteamServiceImplBase {
     @Override
     public void getGamesFromGameAppIds(GetGamesFromGameAppIdsRequest request,
             StreamObserver<GetGamesFromGameAppIdsResponse> responseObserver) {
+        log.debug("Received get games from game app ids request");
         var response = SteamApiMiddleware.getGamesFromGameAppIds(request, steamApiClient);
+        log.debug("Finished get games from game app ids request");
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
@@ -70,12 +80,14 @@ public class SteamService extends SteamServiceImplBase {
     public void getUserInformationFromSteamId(
             GetUserInformationFromSteamIdRequest request,
             StreamObserver<GetUserInformationFromSteamIdResponse> responseObserver) {
+        log.debug("Received get user info from steam id request");
         var response = GetUserInformationFromSteamIdResponse.newBuilder();
 
         var result = steamApiClient.getUserInformationFromSteamId(request.getSteamId());
 
         switch (result) {
             case Result.Success(UserInformationFromSteamId value) -> {
+                log.debug("Success");
                 SteamProfileState profileState;
                 switch (value.response().players().getFirst().personaState()) {
                     case 0:
@@ -99,9 +111,13 @@ public class SteamService extends SteamServiceImplBase {
                                 .setProfileState(profileState)
                                 .build());
             }
-            case Result.Failure(Problem error) -> response.setProblem(error);
+            case Result.Failure(Problem error) -> {
+                log.debug("Failure");
+                response.setProblem(error);
+            }
         }
 
+        log.debug("Finished get user info from steam id request");
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
     }
@@ -110,18 +126,22 @@ public class SteamService extends SteamServiceImplBase {
     public void getFriendsFromSteamId(GetFriendIdsFromSteamIdRequest request,
             StreamObserver<GetFriendIdsFromSteamIdResponse> responseObserver) {
 
-        var response = GetFriendIdsFromSteamIdResponse.newBuilder();
+        log.debug("Received get friends from steam id request");
 
+        var response = GetFriendIdsFromSteamIdResponse.newBuilder();
         switch (steamApiClient.getFriendListFromSteamId(request.getSteamId())) {
             case Result.Success(FriendList value) -> {
+                log.debug("Success");
                 response.setFriendSteamIds(FriendSteamIds.newBuilder().addAllFriendSteamIds(
                         value.friendsList().friends().stream().map(friend -> friend.steamid()).toList()));
             }
             case Result.Failure(Problem error) -> {
+                log.debug("Failure");
                 response.setProblem(error);
             }
         }
 
+        log.debug("Finished get friends from steam id request");
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
     }
@@ -130,10 +150,12 @@ public class SteamService extends SteamServiceImplBase {
     public void getAchievementsForGameAppId(GetAchievementsForGameAppIdRequest request,
             StreamObserver<GetAchievementsForGameAppIdResponse> responseObserver) {
 
-        var response = GetAchievementsForGameAppIdResponse.newBuilder();
+        log.debug("Received get achievements for game app id request");
 
+        var response = GetAchievementsForGameAppIdResponse.newBuilder();
         switch (steamApiClient.getAchievementsForAppId(request.getAppId())) {
             case Result.Success(AchievementsForAppId value) -> {
+                log.debug("Success");
                 response.setAchievments(AchievementsFromSteam.newBuilder().addAllAchievementFromSteam(value.game()
                         .availableGameStats().achievements().stream()
                         .map((achievement) -> AchievementFromSteam.newBuilder().setAchievementName(achievement.name())
@@ -142,10 +164,12 @@ public class SteamService extends SteamServiceImplBase {
                         .toList()));
             }
             case Result.Failure(Problem error) -> {
+                log.debug("Failure");
                 response.setProblem(error);
             }
         }
 
+        log.debug("Finished get achievements for game app id request");
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
     }
@@ -153,10 +177,12 @@ public class SteamService extends SteamServiceImplBase {
     @Override
     public void getUserAchievementsForGameAppId(GetUserAchievementsForGameAppIdRequest request,
             StreamObserver<GetUserAchievementsForGameAppIdResponse> responseObserver) {
-        var response = GetUserAchievementsForGameAppIdResponse.newBuilder();
+        log.debug("Received get user achievements for game app id request");
 
+        var response = GetUserAchievementsForGameAppIdResponse.newBuilder();
         switch (steamApiClient.getUserAchievementsForAppId(request.getAppId(), request.getSteamId())) {
             case Result.Success(UserAchievementsForAppId value) -> {
+                log.debug("Success");
                 response.setAchievements(UserAchievementsForGameAppId.newBuilder().addAllAchievment(value.playerstats()
                         .achievements().stream()
                         .map(((achievement) -> UserAchievementForGameAppId.newBuilder()
@@ -165,10 +191,12 @@ public class SteamService extends SteamServiceImplBase {
                         .toList()));
             }
             case Result.Failure(Problem error) -> {
+                log.debug("Failure");
                 response.setProblem(error);
             }
         }
 
+        log.debug("Finished get user achievements for game app id request");
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
     }

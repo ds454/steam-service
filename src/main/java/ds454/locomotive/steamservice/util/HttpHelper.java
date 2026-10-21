@@ -83,7 +83,9 @@ public class HttpHelper {
             }
 
             try {
+                log.debug("Sending get request '{}'...", uri.toString());
                 response = HttpHelper.client.send(r, BodyHandlers.ofString());
+                log.debug("Done");
             } catch (IOException | InterruptedException e) {
                 log.error("Problem connecting to Steam API: {}", e.getClass().toString());
                 return new Result.Failure<>(
