@@ -121,16 +121,20 @@ public class SteamApiClient {
     }
 
     public Result<AchievementsForAppId, Problem> getAchievementsForAppId(long appId) {
-        Map<String, String> pathParams = new HashMap<String, String>(2);
+        Map<String, String> pathParams = new HashMap<String, String>(4);
         pathParams.put("format", format);
         pathParams.put("key", token);
         pathParams.put("l", "english");
-        pathParams.put("appids", Long.toString(appId));
+        pathParams.put("appid", Long.toString(appId));
 
         AchievementsForAppId a;
         switch (HttpHelper.<AchievementsForAppId>get(host + GetAchievementsForAppId, pathParams,
                 AchievementsForAppId.class)) {
-            case Result.Success(AchievementsForAppId value) -> a = value;
+            case Result.Success(AchievementsForAppId value) -> {
+                if (!value.isValid())
+                    return new Result.Failure<>(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
+                a = value;
+            }
             case Result.Failure(Problem error) -> {
                 return new Result.Failure<>(error);
             }
@@ -139,12 +143,12 @@ public class SteamApiClient {
         return new Result.Success<>(a);
     }
 
-    public Result<UserAchievementsForAppId, Problem> getUserAchievementsForAppId(int appId, String steamId) {
+    public Result<UserAchievementsForAppId, Problem> getUserAchievementsForAppId(long appId, String steamId) {
         Map<String, String> pathParams = new HashMap<String, String>(2);
         pathParams.put("format", format);
         pathParams.put("key", token);
         pathParams.put("steamid", steamId);
-        pathParams.put("appid", Integer.toString(appId));
+        pathParams.put("appid", Long.toString(appId));
 
         UserAchievementsForAppId a;
         switch (HttpHelper.<UserAchievementsForAppId>get(host + GetUserAchievementsForAppId, pathParams,

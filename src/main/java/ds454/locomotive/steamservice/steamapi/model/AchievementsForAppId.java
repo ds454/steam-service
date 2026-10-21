@@ -9,6 +9,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record AchievementsForAppId(Game game) {
 
+    public boolean isValid() {
+        if (game() == null) return false;
+        if (game().availableGameStats() == null || game().availableGameStats().achievements() == null) return false;
+        return true;
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Game(AvailableGameStats availableGameStats) {
     }

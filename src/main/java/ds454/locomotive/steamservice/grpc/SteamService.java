@@ -2,6 +2,9 @@ package ds454.locomotive.steamservice.grpc;
 
 import java.util.List;
 
+import ds454.locomotive.generated.grpc.Achievement;
+import ds454.locomotive.generated.grpc.AchievementFromSteam;
+import ds454.locomotive.generated.grpc.AchievementsFromSteam;
 import ds454.locomotive.generated.grpc.AppIdList;
 import ds454.locomotive.generated.grpc.FriendSteamIds;
 import ds454.locomotive.generated.grpc.GetAchievementsForGameAppIdRequest;
@@ -19,10 +22,14 @@ import ds454.locomotive.generated.grpc.GetUserInformationFromSteamIdResponse;
 import ds454.locomotive.generated.grpc.Problem;
 import ds454.locomotive.generated.grpc.SteamProfileState;
 import ds454.locomotive.generated.grpc.SteamUserInformation;
+import ds454.locomotive.generated.grpc.UserAchievementForGameAppId;
+import ds454.locomotive.generated.grpc.UserAchievementsForGameAppId;
 import ds454.locomotive.generated.grpc.SteamServiceGrpc.SteamServiceImplBase;
 import ds454.locomotive.steamservice.middleware.SteamApiMiddleware;
 import ds454.locomotive.steamservice.steamapi.SteamApiClient;
+import ds454.locomotive.steamservice.steamapi.model.AchievementsForAppId;
 import ds454.locomotive.steamservice.steamapi.model.FriendList;
+import ds454.locomotive.steamservice.steamapi.model.UserAchievementsForAppId;
 import ds454.locomotive.steamservice.steamapi.model.UserInformationFromSteamId;
 import ds454.locomotive.steamservice.util.Result;
 import io.grpc.stub.StreamObserver;
@@ -123,12 +130,46 @@ public class SteamService extends SteamServiceImplBase {
     public void getAchievementsForGameAppId(GetAchievementsForGameAppIdRequest request,
             StreamObserver<GetAchievementsForGameAppIdResponse> responseObserver) {
 
+        var response = GetAchievementsForGameAppIdResponse.newBuilder();
+
+        switch (steamApiClient.getAchievementsForAppId(request.getAppId())) {
+            case Result.Success(AchievementsForAppId value) -> {
+                response.setAchievments(AchievementsFromSteam.newBuilder().addAllAchievementFromSteam(value.game()
+                        .availableGameStats().achievements().stream()
+                        .map((achievement) -> AchievementFromSteam.newBuilder().setAchievementName(achievement.name())
+                                .setAchievementDisplayName(achievement.displayName())
+                                .setDescription(achievement.description()).build())
+                        .toList()));
+            }
+            case Result.Failure(Problem error) -> {
+                response.setProblem(error);
+            }
+        }
+
+        responseObserver.onNext(response.build());
+        responseObserver.onCompleted();
     }
 
     @Override
     public void getUserAchievementsForGameAppId(GetUserAchievementsForGameAppIdRequest request,
             StreamObserver<GetUserAchievementsForGameAppIdResponse> responseObserver) {
+        var response = GetUserAchievementsForGameAppIdResponse.newBuilder();
 
+        switch (steamApiClient.getUserAchievementsForAppId(request.getAppId(), request.getSteamId())) {
+            case Result.Success(UserAchievementsForAppId value) -> {
+                response.setAchievements(UserAchievementsForGameAppId.newBuilder().addAllAchievment(value.playerstats()
+                        .achievements().stream()
+                        .map(((achievement) -> UserAchievementForGameAppId.newBuilder()
+                                .setAchievementName(achievement.name()).setCompleted(achievement.achieved())
+                                .setTimeCompleted(achievement.achieved() ? achievement.unlockTime() : 0).build()))
+                        .toList()));
+            }
+            case Result.Failure(Problem error) -> {
+                response.setProblem(error);
+            }
+        }
+
+        responseObserver.onNext(response.build());
+        responseObserver.onCompleted();
     }
-
 }
