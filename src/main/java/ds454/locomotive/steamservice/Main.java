@@ -28,6 +28,7 @@ public class Main {
                 .build()
                 .start();
         log.info("gRPC server started.");
+        log.info("Logging is enabled");
 
         // Handle clean shutdown
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
