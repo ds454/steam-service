@@ -189,7 +189,7 @@ public class SteamApiClient {
     public Result<FriendList, Problem> getFriendListFromSteamId(String steamId) {
         Map<String, String> pathParams = new HashMap<String, String>(2);
         pathParams.put("key", token);
-        pathParams.put("steamids", steamId);
+        pathParams.put("steamid", steamId);
         pathParams.put("relationship", "friend");
 
         FriendList f;

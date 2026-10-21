@@ -3,12 +3,17 @@ package ds454.locomotive.steamservice.grpc;
 import java.util.List;
 
 import ds454.locomotive.generated.grpc.AppIdList;
+import ds454.locomotive.generated.grpc.FriendSteamIds;
+import ds454.locomotive.generated.grpc.GetAchievementsForGameAppIdRequest;
+import ds454.locomotive.generated.grpc.GetAchievementsForGameAppIdResponse;
 import ds454.locomotive.generated.grpc.GetFriendIdsFromSteamIdRequest;
 import ds454.locomotive.generated.grpc.GetFriendIdsFromSteamIdResponse;
 import ds454.locomotive.generated.grpc.GetGamesFromGameAppIdsRequest;
 import ds454.locomotive.generated.grpc.GetGamesFromGameAppIdsResponse;
 import ds454.locomotive.generated.grpc.GetOwnedGameAppIdsRequest;
 import ds454.locomotive.generated.grpc.GetOwnedGameAppIdsResponse;
+import ds454.locomotive.generated.grpc.GetUserAchievementsForGameAppIdRequest;
+import ds454.locomotive.generated.grpc.GetUserAchievementsForGameAppIdResponse;
 import ds454.locomotive.generated.grpc.GetUserInformationFromSteamIdRequest;
 import ds454.locomotive.generated.grpc.GetUserInformationFromSteamIdResponse;
 import ds454.locomotive.generated.grpc.Problem;
@@ -17,6 +22,7 @@ import ds454.locomotive.generated.grpc.SteamUserInformation;
 import ds454.locomotive.generated.grpc.SteamServiceGrpc.SteamServiceImplBase;
 import ds454.locomotive.steamservice.middleware.SteamApiMiddleware;
 import ds454.locomotive.steamservice.steamapi.SteamApiClient;
+import ds454.locomotive.steamservice.steamapi.model.FriendList;
 import ds454.locomotive.steamservice.steamapi.model.UserInformationFromSteamId;
 import ds454.locomotive.steamservice.util.Result;
 import io.grpc.stub.StreamObserver;
@@ -65,21 +71,26 @@ public class SteamService extends SteamServiceImplBase {
             case Result.Success(UserInformationFromSteamId value) -> {
                 SteamProfileState profileState;
                 switch (value.response().players().getFirst().personaState()) {
-                    case 0: profileState = SteamProfileState.OFFLINE;
-                    case 1: profileState = SteamProfileState.ONLINE;
-                    case 2: profileState = SteamProfileState.BUSY;
-                    case 3: profileState = SteamProfileState.AWAY;
-                    case 4: profileState = SteamProfileState.SNOOZE;
-                    // Looking to trade, looking to play
-                    default: profileState = SteamProfileState.ONLINE;
+                    case 0:
+                        profileState = SteamProfileState.OFFLINE;
+                    case 1:
+                        profileState = SteamProfileState.ONLINE;
+                    case 2:
+                        profileState = SteamProfileState.BUSY;
+                    case 3:
+                        profileState = SteamProfileState.AWAY;
+                    case 4:
+                        profileState = SteamProfileState.SNOOZE;
+                        // Looking to trade, looking to play, other
+                    default:
+                        profileState = SteamProfileState.ONLINE;
                 }
                 response.setSteamUserInfo(
-                    SteamUserInformation
-                        .newBuilder()
-                        .setSteamUsername(value.response().players().getFirst().username())
-                        .setProfileState(profileState)
-                        .build()
-                );
+                        SteamUserInformation
+                                .newBuilder()
+                                .setSteamUsername(value.response().players().getFirst().username())
+                                .setProfileState(profileState)
+                                .build());
             }
             case Result.Failure(Problem error) -> response.setProblem(error);
         }
@@ -91,6 +102,33 @@ public class SteamService extends SteamServiceImplBase {
     @Override
     public void getFriendsFromSteamId(GetFriendIdsFromSteamIdRequest request,
             StreamObserver<GetFriendIdsFromSteamIdResponse> responseObserver) {
+
+        var response = GetFriendIdsFromSteamIdResponse.newBuilder();
+
+        switch (steamApiClient.getFriendListFromSteamId(request.getSteamId())) {
+            case Result.Success(FriendList value) -> {
+                response.setFriendSteamIds(FriendSteamIds.newBuilder().addAllFriendSteamIds(
+                        value.friendsList().friends().stream().map(friend -> friend.steamid()).toList()));
+            }
+            case Result.Failure(Problem error) -> {
+                response.setProblem(error);
+            }
+        }
+
+        responseObserver.onNext(response.build());
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getAchievementsForGameAppId(GetAchievementsForGameAppIdRequest request,
+            StreamObserver<GetAchievementsForGameAppIdResponse> responseObserver) {
+
+    }
+
+    @Override
+    public void getUserAchievementsForGameAppId(GetUserAchievementsForGameAppIdRequest request,
+            StreamObserver<GetUserAchievementsForGameAppIdResponse> responseObserver) {
+
     }
 
 }
