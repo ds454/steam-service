@@ -13,6 +13,7 @@ import ds454.locomotive.generated.grpc.ProblemType;
 public record UserInformationFromSteamId(Response response) {
 
     public Optional<Problem> getProblems() {
+        if (response() == null) return Optional.of(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
         if (response().players() == null || response().players().isEmpty()) return Optional.of(Problem.newBuilder().setProblem(ProblemType.InvalidSteamID).build());
         if (response().players().size() != 1) return Optional.of(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
         var p = response.players().getFirst();
@@ -20,9 +21,6 @@ public record UserInformationFromSteamId(Response response) {
         if (p.visibilityState() == null || p.visibilityState() != 3) return Optional.of(Problem.newBuilder().setProblem(ProblemType.SteamAccountIsPrivate).build());
 
         if (p.username() == null || p.username().isBlank()) return Optional.of(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
-        if (p.name() == null || p.name().isBlank()) return Optional.of(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
-        if (p.lastSeen() == null) return Optional.of(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
-        if (p.profileState() == null) return Optional.of(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
         if (p.personaState() == null) return Optional.of(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
 
         return Optional.empty();
@@ -35,9 +33,6 @@ public record UserInformationFromSteamId(Response response) {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Player(
             @JsonProperty("personaname") String username,
-            @JsonProperty("realname") String name,
-            @JsonProperty("lastlogoff") Long lastSeen,
-            @JsonProperty("profilestate") Integer profileState,
             @JsonProperty("personastate") Integer personaState,
             @JsonProperty("communityvisibilitystate") Integer visibilityState) {
     }
