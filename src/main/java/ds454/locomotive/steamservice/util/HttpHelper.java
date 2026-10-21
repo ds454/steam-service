@@ -9,26 +9,25 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.time.Duration;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ds454.locomotive.generated.grpc.Problem;
 import ds454.locomotive.generated.grpc.ProblemType;
-import ds454.locomotive.steamservice.steamapi.model.AchievementsForAppId;
 
 public class HttpHelper {
     private static final Logger log = LoggerFactory.getLogger(HttpHelper.class);
 
-    public static final HttpClient client = HttpClient.newHttpClient();
+    public static final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     public static final ObjectMapper mapper = new ObjectMapper();
+
+    private static final int backoffTimeMs = 30000;
+    private static final int backoffsBeforeFailure = 5;
 
     public static Result<URI, Problem> uriBuilder(String endpoint, Map<String, String> pathParams) {
         if (pathParams == null || pathParams.isEmpty()) {
@@ -44,7 +43,7 @@ public class HttpHelper {
             uri.append(URLEncoder.encode(key, StandardCharsets.UTF_8) + "="
                     + URLEncoder.encode(pathParams.get(key), StandardCharsets.UTF_8) + "&");
 
-        // Remove final ','
+        // Remove final '&'
         uri.deleteCharAt(uri.length() - 1);
 
         try {
@@ -68,21 +67,44 @@ public class HttpHelper {
         HttpRequest r = HttpRequest.newBuilder().uri(uri).GET().build();
 
         HttpResponse<String> response;
-        try {
-            response = HttpHelper.client.send(r, BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            log.error("Problem connecting to Steam API: {}", e.getClass().toString());
-            return new Result.Failure<>(Problem.newBuilder().setProblem(ProblemType.UnableToConnectToSteam).build());
-        }
+        var failedAttempts = 0;
+        do {
+            if (failedAttempts >= backoffsBeforeFailure) {
+                log.error("Too many failures, quitting");
+                return new Result.Failure<>(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
+            }
+            if (failedAttempts > 0) {
+                log.warn("Backing off before trying again (waiting {} ms)...", failedAttempts * backoffTimeMs);
+                try {
+                    Thread.sleep(failedAttempts * backoffTimeMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
 
-        if (response.statusCode() == 401) {
-            log.error("Authorization Error");
-            return new Result.Failure<>(Problem.newBuilder().setProblem(ProblemType.InvalidSteamWebApiToken).build());
-        }
-        if (response.statusCode() != 200) {
-            log.error("Received response code {}", response.statusCode());
-            return new Result.Failure<>(Problem.newBuilder().setProblem(ProblemType.UnableToConnectToSteam).build());
-        }
+            try {
+                response = HttpHelper.client.send(r, BodyHandlers.ofString());
+            } catch (IOException | InterruptedException e) {
+                log.error("Problem connecting to Steam API: {}", e.getClass().toString());
+                return new Result.Failure<>(
+                        Problem.newBuilder().setProblem(ProblemType.UnableToConnectToSteam).build());
+            }
+
+            if (response.statusCode() == 401) {
+                failedAttempts++;
+                log.warn("Auth Error");
+            }
+            else if (response.statusCode() == 429) {
+                failedAttempts++;
+                log.warn("Rate limited");
+            }
+            else if (response.statusCode() != 200) {
+                log.error("Received response code {}", response.statusCode());
+                return new Result.Failure<>(
+                        Problem.newBuilder().setProblem(ProblemType.UnableToConnectToSteam).build());
+            }
+            else break;
+        } while (true);
 
         ObjectMapper m = HttpHelper.mapper;
         try {

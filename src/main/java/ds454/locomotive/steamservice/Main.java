@@ -20,9 +20,11 @@ public class Main {
         var config = new Config();
         log.info("Done");
 
+        SteamApiClient.init(config);
+
         log.info("Starting gRPC server...");
         Server server = ServerBuilder.forPort(config.port)
-                .addService(new SteamService(new SteamApiClient(config)))
+                .addService(new SteamService(SteamApiClient.get()))
                 .build()
                 .start();
         log.info("gRPC server started.");

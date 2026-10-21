@@ -3,14 +3,15 @@ package ds454.locomotive.steamservice.grpc;
 import java.util.List;
 
 import ds454.locomotive.generated.grpc.AppIdList;
-import ds454.locomotive.generated.grpc.GetGameFromGameAppIdRequest;
-import ds454.locomotive.generated.grpc.GetGameFromGameAppIdResponse;
+import ds454.locomotive.generated.grpc.GetFriendIdsFromSteamIdRequest;
+import ds454.locomotive.generated.grpc.GetFriendIdsFromSteamIdResponse;
 import ds454.locomotive.generated.grpc.GetGamesFromGameAppIdsRequest;
 import ds454.locomotive.generated.grpc.GetGamesFromGameAppIdsResponse;
 import ds454.locomotive.generated.grpc.GetOwnedGameAppIdsRequest;
 import ds454.locomotive.generated.grpc.GetOwnedGameAppIdsResponse;
 import ds454.locomotive.generated.grpc.Problem;
 import ds454.locomotive.generated.grpc.SteamServiceGrpc.SteamServiceImplBase;
+import ds454.locomotive.steamservice.middleware.SteamApiMiddleware;
 import ds454.locomotive.steamservice.steamapi.SteamApiClient;
 import ds454.locomotive.steamservice.util.Result;
 import io.grpc.stub.StreamObserver;
@@ -39,11 +40,14 @@ public class SteamService extends SteamServiceImplBase {
     }
 
     @Override
-    public void getGameFromGameAppId(GetGameFromGameAppIdRequest request, StreamObserver<GetGameFromGameAppIdResponse> responseObserver) {
-        var response = GetGameFromGameAppIdResponse.newBuilder();
-        
-        responseObserver.onNext(response.build());
+    public void getGamesFromGameAppIds(GetGamesFromGameAppIdsRequest request, StreamObserver<GetGamesFromGameAppIdsResponse> responseObserver) {
+        var response = SteamApiMiddleware.getGamesFromGameAppIds(request, steamApiClient);
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
+    }
+
+    @Override 
+    public void getFriendsFromSteamId(GetFriendIdsFromSteamIdRequest request, StreamObserver<GetFriendIdsFromSteamIdResponse> responseObserver) {
     }
 
 }

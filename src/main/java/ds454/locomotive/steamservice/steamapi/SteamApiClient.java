@@ -39,7 +39,29 @@ public class SteamApiClient {
     private final String storeHost;
     private final String storeHostContext;
 
-    public SteamApiClient(Config config) {
+    private static SteamApiClient instance;
+
+    public static void init(Config config) {
+        SteamApiClient.instance = new SteamApiClient(config);
+    }
+
+    public static SteamApiClient get() {
+        if (instance == null) {
+            log.error("Steam API Client isn't initialized yet!");
+            throw new IllegalStateException();
+        }
+        return instance;
+    }
+
+    private SteamApiClient() {
+        token = "";
+        host = "";
+        format = "";
+        storeHost = "";
+        storeHostContext = "";
+    }
+
+    private SteamApiClient(Config config) {
         this.token = config.webApiToken;
         this.host = config.webApiHost;
         this.format = config.webApiFormat;
@@ -70,12 +92,20 @@ public class SteamApiClient {
         return new Result.Success<>(gameIds);
     }
 
-    public Result<GameFromAppId, Problem> getGameFromAppId(int appId) {
+    // Fancy keyword
+    public synchronized Result<GameFromAppId, Problem> getGameFromAppId(long appId) {
         Map<String, String> pathParams = new HashMap<String, String>(2);
         pathParams.put("format", format);
-        pathParams.put("appids", Integer.toString(appId));
+        pathParams.put("appids", Long.toString(appId));
 
         GameFromAppId r;
+        // Rate limiting
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new Result.Failure<>(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
+        }
         switch (HttpHelper.<GameFromAppId>get(storeHost + storeHostContext + GetGameFromAppId, pathParams,
                 GameFromAppId.class)) {
             case Result.Success(GameFromAppId value) -> r = value;
@@ -90,12 +120,12 @@ public class SteamApiClient {
         return new Result.Failure<>(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
     }
 
-    public Result<AchievementsForAppId, Problem> getAchievementsForAppId(int appId) {
+    public Result<AchievementsForAppId, Problem> getAchievementsForAppId(long appId) {
         Map<String, String> pathParams = new HashMap<String, String>(2);
         pathParams.put("format", format);
         pathParams.put("key", token);
         pathParams.put("l", "english");
-        pathParams.put("appids", Integer.toString(appId));
+        pathParams.put("appids", Long.toString(appId));
 
         AchievementsForAppId a;
         switch (HttpHelper.<AchievementsForAppId>get(host + GetAchievementsForAppId, pathParams,
@@ -155,7 +185,7 @@ public class SteamApiClient {
 
         return new Result.Failure<>(p.get());
     }
-    
+
     public Result<FriendList, Problem> getFriendListFromSteamId(String steamId) {
         Map<String, String> pathParams = new HashMap<String, String>(2);
         pathParams.put("key", token);
@@ -177,5 +207,4 @@ public class SteamApiClient {
         }
         return new Result.Success<>(f);
     }
-
 }

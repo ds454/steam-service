@@ -1,10 +1,13 @@
 package ds454.locomotive.steamservice.steamapi.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -12,27 +15,49 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 /**
  * One entry of the Steam "appdetails" response. The raw response is keyed by
- * appid, so deserialize it as:
+ * appid ({"70": {"success": true, "data": {...}}}), and this record unwraps
+ * that key during deserialization, so it can be read directly:
  *
  * <pre>
- * Map&lt;String, AppDetailsEntry&gt; result = mapper.readValue(json,
- *         new TypeReference&lt;Map&lt;String, AppDetailsEntry&gt;&gt;() {});
- * AppDetailsEntry entry = result.get("440");
+ * GameFromAppId game = mapper.readValue(json, GameFromAppId.class);
+ * if (game.isValid()) { ... }
  * </pre>
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public record GameFromAppId(boolean success, Data data) {
+public record GameFromAppId(String appId, boolean success, Data data) {
+
+    /**
+     * Jackson reads the whole response as a map of appid to entry, and this
+     * unwraps the first (and only) entry. An empty or null response gives an
+     * invalid result instead of null.
+     */
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+    static GameFromAppId fromMap(Map<String, Entry> map) {
+        if (map == null || map.isEmpty()) {
+            return new GameFromAppId(null, false, null);
+        }
+        Map.Entry<String, Entry> first = map.entrySet().iterator().next();
+        Entry entry = first.getValue();
+        if (entry == null) {
+            return new GameFromAppId(first.getKey(), false, null);
+        }
+        return new GameFromAppId(first.getKey(), entry.success(), entry.data());
+    }
 
     public boolean isValid() {
         if (!success) return false;
-        if (data() == null) return false;
-        if (data().name() == null || data().name().isBlank()) return false;
-        if (data().shortDescription() == null || data().shortDescription().isBlank()) return false;
-        if (data().releaseYear() == null || data().releaseYear() < 1980) return false;
-        if (data().developer() == null || data().developer().isBlank()) return false;
+        if (data == null) return false;
+        if (data.name() == null || data.name().isBlank()) return false;
+        if (data.shortDescription() == null || data.shortDescription().isBlank()) return false;
+        if (data.releaseYear() == null || data.releaseYear() < 1980) return false;
+        if (data.developer() == null || data.developer().isBlank()) return false;
+        if (data.steamAppId() == null) return false;
 
         return true;
     }
+
+    /** The value under the appid key. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Entry(boolean success, Data data) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
@@ -40,6 +65,9 @@ public record GameFromAppId(boolean success, Data data) {
             String name,
             String shortDescription,
             ReleaseDate releaseDate,
+            // Steam's key is "steam_appid" (no underscore before "id"), which the
+            // snake case strategy would not produce from steamAppId.
+            @JsonProperty("steam_appid") Long steamAppId,
             List<String> developers) {
 
         /** First listed developer, or null if none. */
@@ -54,11 +82,12 @@ public record GameFromAppId(boolean success, Data data) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record ReleaseDate(String date) {
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record ReleaseDate(boolean comingSoon, String date) {
 
         private static final Pattern YEAR = Pattern.compile("\\b(\\d{4})\\b");
 
-        // Steam's date format varies ("Oct 10, 2007", "10 Oct, 2007", "2007"),
+        // Steam's date format varies ("Oct 10, 2007", "Nov 19,1998", "2007"),
         // so pull the 4-digit year out with a regex instead of a fixed format.
         public Integer year() {
             if (date == null) {
