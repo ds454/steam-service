@@ -92,20 +92,36 @@ public class SteamApiClient {
         return new Result.Success<>(gameIds);
     }
 
+    public Result<GameFromAppId, Problem> getGameFromAppId(long appId, int rateLimit) {
+        if (rateLimit != 0) {
+            return getGameFromAppIdSync(appId, rateLimit);
+        }
+        else {
+            return getGameFromAppIdRequest(appId);
+        }
+    }
+
     // Fancy keyword
-    public synchronized Result<GameFromAppId, Problem> getGameFromAppId(long appId) {
+    private synchronized Result<GameFromAppId, Problem> getGameFromAppIdSync(long appId, int rateLimit) {
+        // Rate limiting
+        try {
+            log.debug("Waiting the requested {} ms between calls", rateLimit);
+            Thread.sleep(rateLimit);
+        } catch (InterruptedException e) {
+            log.error("Woke up unexpectedly. This should not happen.");
+            Thread.currentThread().interrupt();
+            return new Result.Failure<>(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
+        }
+        log.debug("Done waiting");
+        return getGameFromAppIdRequest(appId);
+    }
+
+    private Result<GameFromAppId, Problem> getGameFromAppIdRequest(long appId) {
+        GameFromAppId r;
         Map<String, String> pathParams = new HashMap<String, String>(2);
         pathParams.put("format", format);
         pathParams.put("appids", Long.toString(appId));
 
-        GameFromAppId r;
-        // Rate limiting
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return new Result.Failure<>(Problem.newBuilder().setProblem(ProblemType.ServerError).build());
-        }
         switch (HttpHelper.<GameFromAppId>get(storeHost + storeHostContext + GetGameFromAppId, pathParams,
                 GameFromAppId.class)) {
             case Result.Success(GameFromAppId value) -> r = value;

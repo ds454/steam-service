@@ -28,7 +28,7 @@ public class SteamApiMiddleware {
 
         for (Long appId : appIds) {
             log.info("Getting app id {}", appId);
-            var game = c.getGameFromAppId(appId);
+            var game =  request.hasRateLimitMs() ? c.getGameFromAppId(appId, request.getRateLimitMs()) : c.getGameFromAppId(appId, 0);
             switch (game) {
                 case Result.Success(GameFromAppId value) -> {
                     if (value.isValid())

@@ -83,7 +83,7 @@ public class HttpHelper {
             }
 
             try {
-                log.debug("Sending get request '{}'...", uri.toString());
+                log.debug("Sending get request '{}'", uri.toString());
                 response = HttpHelper.client.send(r, BodyHandlers.ofString());
                 log.debug("Done");
             } catch (IOException | InterruptedException e) {
