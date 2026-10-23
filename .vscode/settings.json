@@ -1,5 +1,5 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.configuration.updateBuildConfiguration": "automatic",
     // Ignore warnings in generated code
     "java.diagnostic.filter": [
         "**/target/**"
